@@ -1,3 +1,3 @@
 module webcursada
 
-go 1.25.12
+go 1.22.2
