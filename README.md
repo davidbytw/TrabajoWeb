@@ -39,7 +39,7 @@ La aplicación registra libros con los siguientes atributos:
 
 ## Requisitos
 
-- Go 1.25 o superior
+- Go 1.22 o superior
 
 ## Cómo ejecutar
 
