@@ -1,0 +1,12 @@
+# Binarios compilados
+/booklog
+*.exe
+
+# Artefactos de las pruebas de Go
+*.test
+*.out
+
+# Configuración local del editor
+.vscode/
+
+

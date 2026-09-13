@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:16
+    container_name: books_pg
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      # Datos de PostgreSQL: persisten mientras el volumen exista
+      - pgdata:/var/lib/postgresql/data
+      # Esquema: la imagen lo ejecuta al inicializar la base (solo con el volumen vacío)
+      - ./db/schema/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro,z
+    healthcheck:
+
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} -h 127.0.0.1"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+
+      start_period: 120s
+
+
+volumes:
+  pgdata:
