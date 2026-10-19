@@ -1,0 +1,7 @@
+# db/sqlc no va acá: la imagen necesita el código generado
+.git
+*.md
+*.hurl
+docker-compose.yml
+Makefile
+.env
