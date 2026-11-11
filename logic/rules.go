@@ -33,7 +33,7 @@ var (
 )
 
 // estados a los que se puede pasar desde cada estado
-// se escribe solo al arrancar y después solo se lee: es seguro entre gorutinas
+// se escribe solo al arrancar y despues solo se lee: es seguro entre gorutinas
 var allowedTransitions = map[string][]string{
 	StatusNoLeido: {StatusLeyendo, StatusLeido},
 	StatusLeyendo: {StatusLeido},
@@ -45,7 +45,8 @@ func isValidStatus(status string) bool {
 	return ok
 }
 
-func canTransition(from, to string) bool {
+// CanTransition dice si un libro puede pasar del estado from al estado to
+func CanTransition(from, to string) bool {
 	for _, allowed := range allowedTransitions[from] {
 		if allowed == to {
 			return true
@@ -54,13 +55,13 @@ func canTransition(from, to string) bool {
 	return false
 }
 
-// normalizeText recorta los bordes y valida que el texto no quede vacío ni supere maxTextLength
+// normalizeText recorta los bordes y valida que el texto no quede vacio ni supere maxTextLength
 func normalizeText(value string, errEmpty, errTooLong error) (string, error) {
 	value = strings.TrimSpace(value)
 	if value == "" {
 		return "", errEmpty
 	}
-	// se cuentan caracteres y no bytes, como VARCHAR: "á" ocupa 2 bytes
+	// se cuentan caracteres y no bytes, como VARCHAR: una vocal con tilde ocupa 2 bytes
 	if utf8.RuneCountInString(value) > maxTextLength {
 		return "", errTooLong
 	}
@@ -87,7 +88,7 @@ func validateStatusFields(status string, rating *int32, notes *string) error {
 	return nil
 }
 
-// normalizeNotes recorta las notas y devuelve nil si quedan vacías, para guardar NULL y no ""
+// normalizeNotes recorta las notas y devuelve nil si quedan vacias, para guardar NULL y no ""
 func normalizeNotes(notes *string) *string {
 	if notes == nil {
 		return nil
@@ -99,7 +100,7 @@ func normalizeNotes(notes *string) *string {
 	return &trimmed
 }
 
-// calendarDay devuelve el día de t, en su zona horaria, como la medianoche UTC de ese día
+// calendarDay devuelve el dia de t, en su zona horaria, como la medianoche UTC de ese dia
 func calendarDay(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 }

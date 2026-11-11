@@ -28,7 +28,7 @@ func NewBookService(books BookRepository) *BookService {
 	return &BookService{books: books, now: time.Now}
 }
 
-// Create valida título y autor y registra el libro en estado no_leido
+// Create valida titulo y autor y registra el libro en estado no_leido
 func (s *BookService) Create(ctx context.Context, title, author string) (Book, error) {
 	title, err := normalizeText(title, ErrEmptyTitle, ErrTitleTooLong)
 	if err != nil {
@@ -41,12 +41,7 @@ func (s *BookService) Create(ctx context.Context, title, author string) (Book, e
 	return s.books.Create(ctx, title, author)
 }
 
-// Get devuelve el libro con ese id, o ErrBookNotFound
-func (s *BookService) Get(ctx context.Context, id int32) (Book, error) {
-	return s.books.Get(ctx, id)
-}
-
-// List devuelve todos los libros ordenados por título
+// List devuelve todos los libros ordenados por titulo
 func (s *BookService) List(ctx context.Context) ([]Book, error) {
 	return s.books.List(ctx)
 }
@@ -62,7 +57,7 @@ func (s *BookService) Update(ctx context.Context, id int32, status string, ratin
 		return Book{}, err
 	}
 
-	if !canTransition(book.Status, status) {
+	if !CanTransition(book.Status, status) {
 		return Book{}, fmt.Errorf("%w: de %s a %s", ErrInvalidTransition, book.Status, status)
 	}
 
@@ -76,10 +71,10 @@ func (s *BookService) Update(ctx context.Context, id int32, status string, ratin
 		book.Notes = normalizeNotes(notes)
 	}
 
-	// si otra petición cambió el estado desde la lectura, el update condicional no se aplica
+	// si otra peticion cambio el estado desde la lectura, el update condicional no se aplica
 	updated, err := s.books.UpdateStatus(ctx, book, currentStatus)
 	if errors.Is(err, ErrBookNotFound) {
-		// se relee para elegir el error: existe (409), se borró (404) o falló la base (500)
+		// se relee para elegir el error: existe (409), se borro (404) o fallo la base (500)
 		_, getErr := s.books.Get(ctx, id)
 		if getErr == nil {
 			return Book{}, ErrConcurrentUpdate

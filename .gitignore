@@ -1,17 +1,19 @@
 # credenciales locales: se versiona .env.example y el Makefile lo copia
 .env
 
-# binarios compilados
-/api
-/booklog
+# binario compilado
+/bin/
 *.exe
 
-# lo genera `make generate` desde db/schema y db/queries; versionarlo permitiría que quede desactualizado
+# lo genera `make generate` desde db/schema y db/queries; versionarlo permitiria que quede desactualizado
 db/sqlc/
+
+# lo genera `make generate` desde views/*.templ, por el mismo motivo
+views/*_templ.go
 
 # artefactos de las pruebas de Go
 *.test
 *.out
 
-# configuración local del editor
+# configuracion local del editor
 .vscode/

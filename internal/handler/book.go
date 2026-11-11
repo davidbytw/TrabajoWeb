@@ -1,13 +1,15 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
+	"strconv"
 
-	"booklog/internal/dto"
 	"booklog/logic"
+	"booklog/views"
 )
 
-// BookHandler atiende los endpoints de /books
+// BookHandler atiende la pagina y los formularios de los libros
 type BookHandler struct {
 	service *logic.BookService
 }
@@ -17,89 +19,79 @@ func NewBookHandler(service *logic.BookService) *BookHandler {
 	return &BookHandler{service: service}
 }
 
-// listBooks atiende GET /books
-func (h *BookHandler) listBooks(w http.ResponseWriter, r *http.Request) {
+// index atiende GET /: la pagina con el formulario de alta y la lista de libros
+func (h *BookHandler) index(w http.ResponseWriter, r *http.Request) {
 	books, err := h.service.List(r.Context())
 	if err != nil {
-		writeServiceError(w, err)
+		writeServerError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, toBookResponses(books))
+	writePage(w, r, http.StatusOK, views.IndexPage("", "", "", books))
 }
 
-// createBook atiende POST /books y responde 201 con el libro creado
+// createBook atiende POST /books: guarda el libro y redirige a la pagina (Post/Redirect/Get)
 func (h *BookHandler) createBook(w http.ResponseWriter, r *http.Request) {
-	var request dto.CreateBookRequest
-	if err := decodeJSON(r, &request); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+	if err := r.ParseForm(); err != nil {
+		h.showError(w, r, http.StatusBadRequest, "el formulario no es válido", "", "")
 		return
 	}
+	title := r.FormValue("title")
+	author := r.FormValue("author")
 
-	book, err := h.service.Create(r.Context(), request.Title, request.Author)
-	if err != nil {
-		writeServiceError(w, err)
+	if _, err := h.service.Create(r.Context(), title, author); err != nil {
+		// el formulario vuelve con lo que se habia escrito
+		h.showServiceError(w, r, err, title, author)
 		return
 	}
-	writeJSON(w, http.StatusCreated, toBookResponse(book))
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-// getBook atiende GET /books/{id}
-func (h *BookHandler) getBook(w http.ResponseWriter, r *http.Request, id int32) {
-	book, err := h.service.Get(r.Context(), id)
-	if err != nil {
-		writeServiceError(w, err)
+// updateStatus atiende POST /books/{id}/status: cambia el estado y redirige a la pagina
+func (h *BookHandler) updateStatus(w http.ResponseWriter, r *http.Request, id int32) {
+	if err := r.ParseForm(); err != nil {
+		h.showError(w, r, http.StatusBadRequest, "el formulario no es válido", "", "")
 		return
 	}
-	writeJSON(w, http.StatusOK, toBookResponse(book))
+	rating, err := parseRating(r.FormValue("rating"))
+	if err != nil {
+		h.showError(w, r, http.StatusBadRequest, err.Error(), "", "")
+		return
+	}
+	notes := optionalText(r.FormValue("notes"))
+
+	if _, err := h.service.Update(r.Context(), id, r.FormValue("status"), rating, notes); err != nil {
+		h.showServiceError(w, r, err, "", "")
+		return
+	}
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-// updateBook atiende PUT /books/{id}
-func (h *BookHandler) updateBook(w http.ResponseWriter, r *http.Request, id int32) {
-	var request dto.UpdateBookRequest
-	if err := decodeJSON(r, &request); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	book, err := h.service.Update(r.Context(), id, request.Status, request.Rating, request.Notes)
-	if err != nil {
-		writeServiceError(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, toBookResponse(book))
-}
-
-// deleteBook atiende DELETE /books/{id} y responde 204 sin cuerpo
+// deleteBook atiende POST /books/{id}/delete: borra el libro y redirige a la pagina
 func (h *BookHandler) deleteBook(w http.ResponseWriter, r *http.Request, id int32) {
 	if err := h.service.Delete(r.Context(), id); err != nil {
-		writeServiceError(w, err)
+		h.showServiceError(w, r, err, "", "")
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func toBookResponse(book logic.Book) dto.BookResponse {
-	response := dto.BookResponse{
-		ID:     book.ID,
-		Title:  book.Title,
-		Author: book.Author,
-		Status: book.Status,
-		Rating: book.Rating,
-		Notes:  book.Notes,
+// parseRating convierte el puntaje del formulario; el campo vacio es "sin puntaje" (nil)
+func parseRating(value string) (*int32, error) {
+	if value == "" {
+		return nil, nil
 	}
-	if book.ReadDate != nil {
-		// se formatea en UTC: en hora argentina la medianoche UTC cae el día anterior
-		readDate := book.ReadDate.UTC().Format("2006-01-02")
-		response.ReadDate = &readDate
+	rating, err := strconv.ParseInt(value, 10, 32)
+	if err != nil {
+		return nil, errors.New("el puntaje tiene que ser un número del 1 al 5")
 	}
-	return response
+	rating32 := int32(rating)
+	return &rating32, nil
 }
 
-// toBookResponses usa make para que, sin libros, el JSON sea [] y no null
-func toBookResponses(books []logic.Book) []dto.BookResponse {
-	responses := make([]dto.BookResponse, 0, len(books))
-	for _, book := range books {
-		responses = append(responses, toBookResponse(book))
+// optionalText devuelve nil para un campo vacio
+func optionalText(value string) *string {
+	if value == "" {
+		return nil
 	}
-	return responses
+	return &value
 }

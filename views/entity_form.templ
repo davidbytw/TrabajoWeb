@@ -1,0 +1,15 @@
+package views
+
+// BookForm es el formulario de alta; title y author traen lo que se habia escrito si el alta fallo
+templ BookForm(title, author string) {
+	<section>
+		<h2>Agregar un libro</h2>
+		<form method="POST" action="/books">
+			<label for="title">Título</label>
+			<input type="text" id="title" name="title" value={ title } maxlength="255" required/>
+			<label for="author">Autor</label>
+			<input type="text" id="author" name="author" value={ author } maxlength="255" required/>
+			<button type="submit">Agregar</button>
+		</form>
+	</section>
+}

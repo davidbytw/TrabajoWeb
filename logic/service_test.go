@@ -12,7 +12,7 @@ import (
 type fakeBookRepository struct {
 	books  map[int32]Book
 	nextID int32
-	// beforeUpdate, si no es nil, simula otra petición entre la lectura y la escritura del servicio
+	// beforeUpdate, si no es nil, simula otra peticion entre la lectura y la escritura del servicio
 	beforeUpdate func()
 }
 
@@ -64,7 +64,7 @@ func (f *fakeBookRepository) Delete(ctx context.Context, id int32) error {
 	return nil
 }
 
-// ptr arma en una línea los punteros de los campos opcionales (Rating, Notes)
+// ptr arma en una linea los punteros de los campos opcionales (Rating, Notes)
 func ptr[T any](v T) *T {
 	return &v
 }
@@ -79,7 +79,7 @@ func newTestService(repo *fakeBookRepository) *BookService {
 	return s
 }
 
-// TestCreate prueba las reglas del alta: obligatorios, recortados, largo máximo y estado inicial
+// TestCreate prueba las reglas del alta: obligatorios, recortados, largo maximo y estado inicial
 func TestCreate(t *testing.T) {
 	cases := []struct {
 		name       string
@@ -96,7 +96,7 @@ func TestCreate(t *testing.T) {
 		{name: "autor vacío", title: "Rayuela", author: "", wantErr: ErrEmptyAuthor},
 		{name: "título de 256 caracteres", title: strings.Repeat("a", 256), author: "X", wantErr: ErrTitleTooLong},
 		{name: "autor de 256 caracteres", title: "X", author: strings.Repeat("a", 256), wantErr: ErrAuthorTooLong},
-		// 255 "á" son 510 bytes pero 255 caracteres: tiene que ser válido
+		// 255 vocales con tilde son 510 bytes pero 255 caracteres: tiene que ser valido
 		{name: "título de 255 caracteres con tilde", title: strings.Repeat("á", 255), author: "X",
 			wantTitle: strings.Repeat("á", 255), wantAuthor: "X"},
 	}
@@ -194,7 +194,7 @@ func TestUpdate(t *testing.T) {
 				t.Errorf("Update(%s -> %s) dejó el estado en %s; se esperaba %s", c.from, c.to, book.Status, c.to)
 			}
 
-			// la fecha es el día de fixedNow en Buenos Aires (9), no en UTC (10)
+			// la fecha es el dia de fixedNow en Buenos Aires (9), no en UTC (10)
 			if c.to == StatusLeido {
 				wantDate := time.Date(2026, 10, 9, 0, 0, 0, 0, time.UTC)
 				if book.ReadDate == nil || !book.ReadDate.Equal(wantDate) || book.Rating == nil || *book.Rating != *c.rating {
@@ -233,7 +233,7 @@ func TestUpdate_NotFound(t *testing.T) {
 	}
 }
 
-// TestUpdate_ConcurrentChange simula otro PUT que pasa el libro a leido entre la lectura y la escritura
+// TestUpdate_ConcurrentChange simula otro pedido que pasa el libro a leido entre la lectura y la escritura
 func TestUpdate_ConcurrentChange(t *testing.T) {
 	repo := newFakeBookRepository()
 	repo.books[1] = Book{ID: 1, Title: "Rayuela", Author: "Julio Cortázar", Status: StatusNoLeido}
@@ -251,7 +251,7 @@ func TestUpdate_ConcurrentChange(t *testing.T) {
 	}
 }
 
-// TestUpdate_DeletedMeanwhile simula otra petición que borra el libro en el medio: tiene que ser 404, no 409
+// TestUpdate_DeletedMeanwhile simula otra peticion que borra el libro en el medio: tiene que ser 404, no 409
 func TestUpdate_DeletedMeanwhile(t *testing.T) {
 	repo := newFakeBookRepository()
 	repo.books[1] = Book{ID: 1, Title: "Rayuela", Author: "Julio Cortázar", Status: StatusNoLeido}
@@ -278,7 +278,7 @@ func TestUpdate_NotesWithOnlySpaces(t *testing.T) {
 	}
 }
 
-// TestDelete prueba borrar un libro y después volver a borrar el mismo id, que ya no existe
+// TestDelete prueba borrar un libro y despues volver a borrar el mismo id, que ya no existe
 func TestDelete(t *testing.T) {
 	repo := newFakeBookRepository()
 	repo.books[1] = Book{ID: 1, Title: "Rayuela", Author: "Julio Cortázar", Status: StatusNoLeido}

@@ -18,7 +18,7 @@ type Book struct {
 	Title    string
 	Author   string
 	Status   string
-	ReadDate *time.Time // el día se guarda como la medianoche UTC de esa fecha
+	ReadDate *time.Time // el dia se guarda como la medianoche UTC de esa fecha
 	Rating   *int32
 	Notes    *string
 }

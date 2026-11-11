@@ -1,0 +1,4 @@
+/* tipografia con serifa en vez de la del sistema (se carga despues de Pico) */
+:root {
+	--pico-font-family: Georgia, "Times New Roman", serif;
+}

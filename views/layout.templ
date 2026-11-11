@@ -1,0 +1,20 @@
+package views
+
+// Layout es la estructura base de la pagina; content es lo que va dentro de <main>
+templ Layout(content templ.Component) {
+	<!DOCTYPE html>
+	<html lang="es" data-theme="light">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>Registro de Libros Leídos</title>
+			<link rel="stylesheet" href="/static/pico.fluid.classless.lime.min.css"/>
+			<link rel="stylesheet" href="/static/styles.css"/>
+		</head>
+		<body>
+			<main>
+				@content
+			</main>
+		</body>
+	</html>
+}

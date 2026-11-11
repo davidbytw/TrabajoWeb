@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-// Logging registra el método, la ruta y la dirección remota de cada petición antes de pasarla al handler
+// Logging registra el metodo, la ruta y la direccion remota de cada peticion antes de pasarla al handler
 func Logging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s %s", r.Method, r.URL.Path, r.RemoteAddr)

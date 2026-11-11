@@ -13,7 +13,7 @@ import (
 func Open() (*sql.DB, error) {
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
-		return nil, errors.New("la variable DATABASE_URL no está definida (correr con `make run`)")
+		return nil, errors.New("la variable DATABASE_URL no está definida (correr con `make run-app`)")
 	}
 
 	db, err := sql.Open("pgx", databaseURL)
@@ -23,7 +23,7 @@ func Open() (*sql.DB, error) {
 	// sql.Open no se conecta: el Ping es el que confirma que la base responde
 	if err := db.Ping(); err != nil {
 		db.Close()
-		return nil, fmt.Errorf("conectar a la base (¿está levantada? `make up`): %w", err)
+		return nil, fmt.Errorf("conectar a la base (¿está levantada? `make run-app` la levanta): %w", err)
 	}
 	return db, nil
 }

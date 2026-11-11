@@ -1,0 +1,101 @@
+package views
+
+import "booklog/logic"
+
+// BookList es la tabla de libros, o un mensaje si todavia no hay ninguno
+templ BookList(books []logic.Book) {
+	<section>
+		<h2>Mis libros</h2>
+		if len(books) == 0 {
+			<p>Todavía no cargaste ningún libro.</p>
+		} else {
+			<table>
+				<thead>
+					<tr>
+						<th>Título</th>
+						<th>Autor</th>
+						<th>Estado</th>
+						<th>Fecha de lectura</th>
+						<th>Puntaje</th>
+						<th>Notas</th>
+						<th>Acciones</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, book := range books {
+						<tr>
+							<td>{ book.Title }</td>
+							<td>{ book.Author }</td>
+							<td>{ statusLabel(book.Status) }</td>
+							<td>
+								if book.ReadDate != nil {
+									{ formatDate(*book.ReadDate) }
+								} else {
+									Sin fecha
+								}
+							</td>
+							<td>
+								if book.Rating != nil {
+									{ *book.Rating }
+								} else {
+									Sin puntaje
+								}
+							</td>
+							<td>
+								if book.Notes != nil {
+									{ *book.Notes }
+								} else {
+									Sin notas
+								}
+							</td>
+							<td>
+								@bookActions(book)
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	</section>
+}
+
+// bookActions muestra los cambios de estado que las reglas permiten desde el estado actual, y el borrado
+templ bookActions(book logic.Book) {
+	if logic.CanTransition(book.Status, logic.StatusLeyendo) {
+		<form method="POST" action={ bookURL(book.ID, "status") }>
+			<input type="hidden" name="status" value={ logic.StatusLeyendo }/>
+			<button type="submit">Empezar a leer</button>
+		</form>
+	}
+	if logic.CanTransition(book.Status, logic.StatusLeido) {
+		<details>
+			if book.Status == logic.StatusLeido {
+				<summary>Lo volví a leer</summary>
+			} else {
+				<summary>Marcar como leído</summary>
+			}
+			<form method="POST" action={ bookURL(book.ID, "status") }>
+				<input type="hidden" name="status" value={ logic.StatusLeido }/>
+				<label>
+					Puntaje
+					<select name="rating" required>
+						<option value="" selected disabled>Elegí un puntaje</option>
+						<option value="1">1</option>
+						<option value="2">2</option>
+						<option value="3">3</option>
+						<option value="4">4</option>
+						<option value="5">5</option>
+					</select>
+				</label>
+				<label>
+					Notas
+					<textarea name="notes"></textarea>
+				</label>
+				<button type="submit">Guardar</button>
+			</form>
+		</details>
+	}
+	<form method="POST" action={ bookURL(book.ID, "delete") }>
+		<button type="submit">Borrar</button>
+	</form>
+}

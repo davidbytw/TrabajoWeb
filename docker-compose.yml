@@ -1,4 +1,4 @@
-# nombre fijo: sin él Compose usa el de la carpeta y dos copias en carpetas con el mismo nombre se pisarían
+# nombre fijo: sin el, Compose usa el de la carpeta y dos copias en carpetas con el mismo nombre se pisarian
 name: booklog
 
 services:
@@ -10,11 +10,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      # publicado para la API que corre en la máquina con `make run`
+      # publicado para la aplicacion, que corre en la maquina y no en un contenedor
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      # el esquema se aplica solo con el volumen vacío; ",z" es para SELinux
+      # el esquema se aplica solo con el volumen vacio; ",z" es para SELinux
       - ./db/schema/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro,z
     healthcheck:
       # por TCP: mientras se aplica el esquema la base solo escucha en el socket local
@@ -24,38 +24,15 @@ services:
       retries: 10
       start_period: 120s
 
-  api:
-    build: .
-    environment:
-      # en la red de Compose la base se llama "db", no localhost
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable
-      # la fecha de lectura es el día de hoy en Argentina y no en UTC
-      TZ: America/Argentina/Buenos_Aires
-    ports:
-      - "8080:8080"
-    # espera a que la base pase el healthcheck, no solo a que arranque su contenedor
-    depends_on:
-      db:
-        condition: service_healthy
-    # sana cuando responde GET /books, que también pasa por la base; start_interval (Docker 25+) chequea cada 1s al arrancar
-    healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/books"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 30s
-      start_interval: 1s
-
-  # corre requests.hurl contra la API; con el perfil "test", `docker compose up` no lo levanta
+  # corre requests.hurl contra la aplicacion; con el perfil "test", `docker compose up` no lo levanta
   hurl:
     image: ghcr.io/orange-opensource/hurl:7.1.0
     profiles: ["test"]
+    # usa la red de la maquina para llegar a la aplicacion en localhost:8080
+    network_mode: host
     volumes:
       - ./requests.hurl:/requests.hurl:ro,z
-    command: ["--test", "--color", "--variable", "base_url=http://api:8080", "/requests.hurl"]
-    depends_on:
-      api:
-        condition: service_healthy
+    command: ["--test", "--color", "--variable", "base_url=http://localhost:8080", "/requests.hurl"]
 
 volumes:
   pgdata:

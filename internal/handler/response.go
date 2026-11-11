@@ -1,53 +1,61 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 
-	"booklog/internal/dto"
+	"github.com/a-h/templ"
+
 	"booklog/logic"
+	"booklog/views"
 )
 
-// decodeJSON decodifica el cuerpo en dst y rechaza las claves que no son del contrato en vez de ignorarlas
-func decodeJSON(r *http.Request, dst any) error {
-	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(dst); err != nil {
-		return fmt.Errorf("el cuerpo no es el JSON esperado: %w", err)
-	}
-	return nil
-}
-
-func writeJSON(w http.ResponseWriter, status int, value any) {
-	w.Header().Set("Content-Type", "application/json")
+// writePage responde una pagina HTML completa con ese codigo de estado
+func writePage(w http.ResponseWriter, r *http.Request, status int, page templ.Component) {
+	// las cabeceras y el codigo van antes del cuerpo
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(value); err != nil {
-		log.Printf("error al codificar la respuesta: %s", err)
+	if err := page.Render(r.Context(), w); err != nil {
+		// el codigo ya se envio, asi que solo queda registrarlo
+		log.Printf("error al escribir la pagina: %s", err)
 	}
 }
 
-// writeError responde {"error": message} con ese código de estado
-func writeError(w http.ResponseWriter, status int, message string) {
-	writeJSON(w, status, dto.ErrorResponse{Error: message})
+// showError vuelve a mostrar la pagina con el mensaje y la lista actualizada
+func (h *BookHandler) showError(w http.ResponseWriter, r *http.Request, status int, message, title, author string) {
+	books, err := h.service.List(r.Context())
+	if err != nil {
+		writeServerError(w, err)
+		return
+	}
+	writePage(w, r, status, views.IndexPage(message, title, author, books))
 }
 
-// writeServiceError elige el código HTTP según el tipo de error que devolvió el servicio
-func writeServiceError(w http.ResponseWriter, err error) {
+// showServiceError elige el codigo HTTP segun el tipo de error que devolvio el servicio
+func (h *BookHandler) showServiceError(w http.ResponseWriter, r *http.Request, err error, title, author string) {
 	var validationError *logic.ValidationError
 	var conflictError *logic.ConflictError
 	switch {
 	case errors.As(err, &validationError):
-		writeError(w, http.StatusBadRequest, err.Error())
+		h.showError(w, r, http.StatusBadRequest, err.Error(), title, author)
 	case errors.Is(err, logic.ErrBookNotFound):
-		writeError(w, http.StatusNotFound, err.Error())
+		h.showError(w, r, http.StatusNotFound, err.Error(), title, author)
 	case errors.As(err, &conflictError):
-		writeError(w, http.StatusConflict, err.Error())
+		h.showError(w, r, http.StatusConflict, err.Error(), title, author)
 	default:
-		// el detalle queda en el log; al cliente no se le muestran errores internos
-		log.Printf("error interno: %s", err)
-		writeError(w, http.StatusInternalServerError, "error interno del servidor")
+		writeServerError(w, err)
 	}
+}
+
+// writeServerError responde 500 sin mostrar el error interno, que queda en el log
+func writeServerError(w http.ResponseWriter, err error) {
+	log.Printf("error interno: %s", err)
+	http.Error(w, "error interno del servidor", http.StatusInternalServerError)
+}
+
+// writeMethodNotAllowed responde 405 con la cabecera Allow, que HTTP exige en ese caso
+func writeMethodNotAllowed(w http.ResponseWriter, allowedMethods string) {
+	w.Header().Set("Allow", allowedMethods)
+	http.Error(w, "método no permitido", http.StatusMethodNotAllowed)
 }

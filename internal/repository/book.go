@@ -21,7 +21,7 @@ func NewPostgresBookRepository(queries *sqlc.Queries) *PostgresBookRepository {
 	return &PostgresBookRepository{queries: queries}
 }
 
-// Create inserta el libro y lo devuelve con el id que generó la base
+// Create inserta el libro y lo devuelve con el id que genero la base
 func (r *PostgresBookRepository) Create(ctx context.Context, title, author string) (logic.Book, error) {
 	row, err := r.queries.CreateBook(ctx, sqlc.CreateBookParams{Title: title, Author: author})
 	if err != nil {
@@ -42,7 +42,7 @@ func (r *PostgresBookRepository) Get(ctx context.Context, id int32) (logic.Book,
 	return toBook(row), nil
 }
 
-// List devuelve todos los libros ordenados por título
+// List devuelve todos los libros ordenados por titulo
 func (r *PostgresBookRepository) List(ctx context.Context) ([]logic.Book, error) {
 	rows, err := r.queries.ListBooks(ctx)
 	if err != nil {
@@ -63,7 +63,7 @@ func (r *PostgresBookRepository) UpdateStatus(ctx context.Context, book logic.Bo
 		ReadDate: toNullTime(book.ReadDate),
 		Rating:   toNullInt32(book.Rating),
 		Notes:    toNullString(book.Notes),
-		Status_2: currentStatus, // estado leído antes de validar ($6)
+		Status_2: currentStatus, // estado leido antes de validar ($6)
 	})
 	if errors.Is(err, sql.ErrNoRows) {
 		return logic.Book{}, logic.ErrBookNotFound
@@ -74,7 +74,7 @@ func (r *PostgresBookRepository) UpdateStatus(ctx context.Context, book logic.Bo
 	return toBook(row), nil
 }
 
-// Delete borra el libro, o devuelve logic.ErrBookNotFound si no existía
+// Delete borra el libro, o devuelve logic.ErrBookNotFound si no existia
 func (r *PostgresBookRepository) Delete(ctx context.Context, id int32) error {
 	_, err := r.queries.DeleteBook(ctx, id)
 	if errors.Is(err, sql.ErrNoRows) {
